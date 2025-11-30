@@ -208,9 +208,9 @@ window.addEventListener("DOMContentLoaded", () => {
 
   if (refreshBtn) {
     refreshBtn.addEventListener("click", () => {
-      location.reload();
+      const url = new URL(window.location.href);
+      url.searchParams.set("r", Date.now().toString()); // evita cache
+      window.location.href = url.toString(); // navegación “limpia”
     });
   }
 });
-
-
