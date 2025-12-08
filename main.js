@@ -3,10 +3,9 @@ const PIN_CORRECTO = "5703";
 
 function verificarEstadoBloqueo() {
   const lockScreen = document.getElementById("lock-overlay");
-  // Si no existe el overlay (porque quizás se borró manualmente), no hacemos nada
   if (!lockScreen) return;
 
-  // Si ya se ingresó el PIN anteriormente y es válido, quitamos el escudo
+  // Si ya se ingresó el PIN anteriormente, quitamos el escudo invisible
   if (localStorage.getItem("pinAccesoAutorizado") === "true") {
     desbloquearPantalla();
   }
@@ -18,7 +17,6 @@ function verificarEstadoBloqueo() {
 }
 
 function solicitarPin() {
-  // Timeout para asegurar renderizado suave del prompt
   setTimeout(() => {
     const pinIngresado = prompt("🔒 STAND PROTEGIDO\nPor favor, introduce el PIN de acceso:");
 
@@ -34,15 +32,13 @@ function solicitarPin() {
 function desbloquearPantalla() {
   const lockScreen = document.getElementById("lock-overlay");
   if (lockScreen) {
-    // Eliminamos el div del HTML para que el clic pase al iframe de abajo
     lockScreen.remove(); 
   }
 }
 
-// Iniciar verificación de seguridad al cargar
 document.addEventListener("DOMContentLoaded", verificarEstadoBloqueo);
 
-// ----------------- SEGURIDAD EXTRA (ANTI-INSPECCIÓN) -----------------
+// ----------------- SEGURIDAD EXTRA -----------------
 
 document.addEventListener("contextmenu", (e) => e.preventDefault());
 
@@ -52,7 +48,7 @@ function ctrlShiftKey(e, keyCode) {
 
 document.onkeydown = (e) => {
   if (
-    event.keyCode === 123 || // F12
+    event.keyCode === 123 ||
     ctrlShiftKey(e, "I") ||
     ctrlShiftKey(e, "J") ||
     ctrlShiftKey(e, "C") ||
@@ -81,7 +77,6 @@ showMenu("nav-toggle", "nav-menu");
 class DIDChat {
   constructor(containerId) {
     this.container = document.getElementById(containerId);
-    // ENLACE D-ID
     this.chatUrl =
       "https://studio.d-id.com/agents/share?id=agt_1pM2Ko9X&utm_source=copy&key=WjI5dloyeGxMVzloZFhSb01ud3hNVEU0T0RjNU1UQTRNamMxTlRBNU9EYzJNakU2VjNWc1prRTVjMEpwUkhSaGVubERWSGN0ZERGaA==";
     this.iframe = null;
@@ -93,7 +88,6 @@ class DIDChat {
   }
 
   createIframe() {
-    // Evitar duplicados
     if (this.container.querySelector('.iframe-wrapper')) return;
 
     const wrapper = document.createElement("div");
@@ -177,7 +171,7 @@ gsap.from(".home-social", {
   stagger: 0.2,
 });
 
-// ----------------- REFRESCO AUTOMÁTICO (IDLE TIMER) -----------------
+// ----------------- REFRESCO AUTOMÁTICO -----------------
 
 function iniciarRefresco() {
   let refreshTimeout;
@@ -213,7 +207,6 @@ function iniciarRefresco() {
       clearTimeout(refreshTimeout);
       document.removeEventListener('click', cancelAction);
       document.removeEventListener('touchstart', cancelAction);
-      // Reiniciar el contador de 5 minutos
       setTimeout(startRefreshSequence, 5 * 60 * 1000);
     }
 
@@ -227,41 +220,41 @@ function iniciarRefresco() {
     }, 5000);
   }
 
-  // Iniciar la cuenta regresiva de 5 minutos
   setTimeout(startRefreshSequence, 5 * 60 * 1000);
 }
 
 iniciarRefresco();
 
-// ----------------- CONTROL DE BOTONES (REFRESCO Y BLOQUEO) -----------------
+// ----------------- CONTROL DE BOTONES (LOGICA MODIFICADA) -----------------
 
 document.addEventListener("DOMContentLoaded", () => {
   const refreshBtn = document.getElementById("refresh-btn");
   const lockBtn = document.getElementById("lock-btn");
 
-  // 1. FUNCIONALIDAD: BLOQUEAR PANTALLA
+  // BOTÓN DE CANDADO (Siempre bloquea y recarga)
   if (lockBtn) {
     lockBtn.addEventListener("click", () => {
-      // Eliminamos la "llave" del localStorage
       localStorage.removeItem("pinAccesoAutorizado");
-      
-      // Recargamos la página. Al iniciar, verificará que no hay llave 
-      // y pondrá el bloqueo automáticamente.
       location.reload();
     });
   }
 
-  // 2. FUNCIONALIDAD: LIMPIEZA TOTAL Y RECARGA
+  // BOTÓN DE REFRESCO (Lógica condicional)
   if (refreshBtn) {
     refreshBtn.addEventListener("click", () => {
-      // Preguntar confirmación (opcional, puedes borrar esta línea si lo quieres directo)
-      if(!confirm("¿Deseas limpiar caché y recargar? Esto también bloqueará la sesión.")) return;
+      // Guardamos la respuesta del usuario en una variable
+      // true = Aceptar, false = Cancelar
+      const cerrarSesion = confirm("¿Deseas limpiar caché y recargar? Esto también bloqueará la sesión.\n\n[ACEPTAR] = Bloquear y Recargar\n[CANCELAR] = Solo Recargar (Mantener sesión)");
 
-      // Limpiamos todo el almacenamiento local y de sesión
-      localStorage.clear();
-      sessionStorage.clear();
+      if (cerrarSesion) {
+        // Opción ACEPTAR: Limpiamos storage (se pierde el PIN guardado)
+        localStorage.clear();
+        sessionStorage.clear();
+      } 
+      // Si el usuario da CANCELAR, saltamos el bloque 'if' anterior
+      // y pasamos directamente a la recarga, manteniendo el storage intacto.
 
-      // Forzamos una recarga con un parámetro de tiempo para evitar caché del navegador
+      // Recarga forzada (Cache Buster)
       const url = new URL(window.location.href);
       url.searchParams.set("r", Date.now().toString()); 
       window.location.href = url.toString(); 
